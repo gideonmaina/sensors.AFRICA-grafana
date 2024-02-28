@@ -1,0 +1,43 @@
+version: '3.8'
+services:
+  # Postgres db to store Grafana metadata
+  grafana_db:
+    image: postgres:latest
+    container_name: GF_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PWD}
+    ports:
+      - '5432:5432'
+    volumes:
+      - grafana_db:/var/lib/postgresql/data
+
+  # Grafana service
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    user: "0:0"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD} # Apparently not being respected as by this issue https://github.com/grafana/grafana/issues/49055
+      GF_DATABASE_TYPE: postgres
+      GF_DATABASE_HOST: grafana_db:5432
+      GF_DATABASE_NAME: ${POSTGRES_DB}
+      GF_DATABASE_USER: ${POSTGRES_USER}
+      GF_DATABASE_PASSWORD: ${POSTGRES_PWD}
+      GF_DATABASE_SSL_MODE: disable
+      GF_SECURITY_ALLOW_EMBEDDING: true
+    restart: unless-stopped
+    depends_on:
+      - grafana_db
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana:/var/lib/grafana
+
+volumes:
+  grafana_db:
+    driver: local
+  grafana:
+    driver: local
